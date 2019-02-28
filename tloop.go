@@ -55,7 +55,9 @@ func (t *toutHeap) Pop() interface{} {
 	return x
 }
 
-// ToutLoop or the timeout event loop
+// ToutLoop or the timeout loop.
+// The loop uses a heap to track and dispatches events when their timeout's expire
+// Listen to C to recieve events
 type ToutLoop struct {
 	heap     toutHeap
 	requests chan *request
@@ -161,8 +163,8 @@ func (e *ToutLoop) Run() {
 	}(e)
 }
 
-// NewToutLoop for scheduling stuff
-func NewToutLoop() *ToutLoop {
+// New returns a new timeout looop
+func New() *ToutLoop {
 	e := &ToutLoop{
 		requests: make(chan *request),
 		reply:    make(chan error),
@@ -180,7 +182,7 @@ func (e *ToutLoop) Stop() {
 	e.wg.Wait()
 }
 
-// Add job to run after given time
+// Add object with given id to be returned after given time
 func (e *ToutLoop) Add(id string, object interface{}, after time.Duration) error {
 	e.requests <- &request{
 		operation: addOp,
@@ -192,7 +194,7 @@ func (e *ToutLoop) Add(id string, object interface{}, after time.Duration) error
 	return <-e.reply
 }
 
-// Reschedule job to run after given time
+// Reschedule the object with the given id
 func (e *ToutLoop) Reschedule(id string, after time.Duration) error {
 	e.requests <- &request{
 		operation: rescheduleOp,
@@ -203,7 +205,7 @@ func (e *ToutLoop) Reschedule(id string, after time.Duration) error {
 	return <-e.reply
 }
 
-// Remove job
+// Remove the object with the given id from the loop
 func (e *ToutLoop) Remove(id string) error {
 	e.requests <- &request{
 		operation: removeOp,
