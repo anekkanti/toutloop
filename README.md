@@ -1,6 +1,6 @@
 # Timeout Loop
 
-Useful to scheduling at scale. Uses a timeout heap to track timeouts.
+Useful when scheduling work at scale. Uses a heap to track timeouts.
 
 Example
 ```go
