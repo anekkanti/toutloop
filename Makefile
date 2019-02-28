@@ -1,10 +1,14 @@
 all: build test prof
 
-build: 
+dependencies:
+	go get -u github.com/golang/dep/cmd/dep
+	dep ensure
+
+build: dependencies
 	go build ./...
 
-test:
+test: build
 	go test ./...
 
-prof:
+prof: build
 	go test -bench=. -benchmem -cpuprofile profile.out
