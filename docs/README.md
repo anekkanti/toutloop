@@ -13,35 +13,36 @@ type ToutLoop struct {
 }
 ```
 
-ToutLoop or the timeout event loop
+ToutLoop or the timeout loop. The loop uses a heap to track and dispatches
+events when their timeout's expire Listen to C to recieve events
 
-#### func  NewToutLoop
+#### func  New
 
 ```go
-func NewToutLoop() *ToutLoop
+func New() *ToutLoop
 ```
-NewToutLoop for scheduling stuff
+New returns a new timeout looop
 
 #### func (*ToutLoop) Add
 
 ```go
 func (e *ToutLoop) Add(id string, object interface{}, after time.Duration) error
 ```
-Add job to run after given time
+Add object with given id to be returned after given time
 
 #### func (*ToutLoop) Remove
 
 ```go
 func (e *ToutLoop) Remove(id string) error
 ```
-Remove job
+Remove the object with the given id from the loop
 
 #### func (*ToutLoop) Reschedule
 
 ```go
 func (e *ToutLoop) Reschedule(id string, after time.Duration) error
 ```
-Reschedule job to run after given time
+Reschedule the object with the given id
 
 #### func (*ToutLoop) Run
 
