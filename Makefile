@@ -15,4 +15,4 @@ prof: build
 
 documentation:
 	go get github.com/robertkrimen/godocdown/godocdown
-	godocdown github.com/anekkanti/toutloop > docs/README
+	godocdown github.com/anekkanti/toutloop > docs/README.md
