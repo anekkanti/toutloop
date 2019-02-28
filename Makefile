@@ -12,7 +12,3 @@ test: build
 
 prof: build
 	go test -bench=. -benchmem -cpuprofile profile.out
-
-documentation:
-	go get github.com/robertkrimen/godocdown/godocdown
-	godocdown github.com/anekkanti/toutloop > docs/README.md
