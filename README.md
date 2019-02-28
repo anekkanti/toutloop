@@ -1,5 +1,7 @@
 # Timeout Loop
 
+[![GoDoc](https://godoc.org/github.com/anekkanti/toutloop?status.svg)](https://godoc.org/github.com/anekkanti/toutloop)
+
 Useful to scheduling at scale. Uses a timeout heap to track timeouts.
 
 Example
