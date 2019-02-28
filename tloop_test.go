@@ -14,14 +14,13 @@ func init() {
 }
 
 type tjob struct {
-	timeout
 	name string
 	when time.Time
 }
 
 func TestToutLoop(t *testing.T) {
 	assert := assert.New(t)
-	tloop := NewToutLoop()
+	tloop := New()
 	tloop.Run()
 
 	j1 := &tjob{name: "job-1", when: time.Now().Add(time.Millisecond * 300)}
@@ -99,7 +98,7 @@ func TestToutLoop(t *testing.T) {
 
 func BenchmarkToutLoopNJobs(t *testing.B) {
 	assert := assert.New(t)
-	tloop := NewToutLoop()
+	tloop := New()
 	tloop.Run()
 
 	numberOfJobs := 10000
@@ -136,4 +135,27 @@ func BenchmarkToutLoopNJobs(t *testing.B) {
 	assert.Equal(true, deltaAvg < time.Millisecond*1)
 	assert.Equal(true, deltaMax < time.Millisecond*10)
 	assert.Equal(numberOfJobs, count)
+}
+
+func TestExample(t *testing.T) {
+	tloop := New()
+	tloop.Run()
+
+	j1 := &tjob{name: "j1"}
+	err := tloop.Add(j1.name, j1, time.Millisecond*300)
+	if err != nil {
+		panic(err)
+	}
+
+	err = tloop.Reschedule(j1.name, time.Millisecond*400)
+	if err != nil {
+		panic(err)
+	}
+
+	for j := range tloop.C {
+		if j.(*tjob) == j1 {
+			break
+		}
+	}
+	tloop.Stop()
 }
