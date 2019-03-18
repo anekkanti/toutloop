@@ -96,23 +96,20 @@ func TestToutLoop(t *testing.T) {
 	tloop.Stop()
 }
 
-func BenchmarkToutLoopNJobs(t *testing.B) {
-	assert := assert.New(t)
+func runToutLoopWithNJobs(numberOfJobsPerSec int64, assert *assert.Assertions) (avg, max time.Duration) {
 	tloop := New()
 	tloop.Run()
 
-	numberOfJobs := 10000
-
 	go func() {
-		for i := 0; i < numberOfJobs; i++ {
-			after := time.Duration(rand.Int()%500) * time.Millisecond
+		for i := int64(0); i < numberOfJobsPerSec; i++ {
+			after := time.Duration(rand.Int()%1000) * time.Millisecond
 			j := &tjob{name: fmt.Sprintf("job-%d", i), when: time.Now().Add(after)}
 			err := tloop.Add(j.name, j, after)
 			assert.NoError(err)
 		}
 	}()
 
-	count := 0
+	count := int64(0)
 	var deltaSum time.Duration
 	var deltaMax time.Duration
 	for o := range tloop.C {
@@ -123,19 +120,41 @@ func BenchmarkToutLoopNJobs(t *testing.B) {
 			deltaMax = delta
 		}
 		count++
-		if count == numberOfJobs {
+		if count == numberOfJobsPerSec {
 			tloop.Stop()
 		}
 	}
+
+	assert.Equal(numberOfJobsPerSec, count)
+
 	deltaAvg := deltaSum / time.Duration(count)
-	t.Logf("done: recieved %d events", count)
+	return deltaAvg, deltaMax
+}
+
+func TestToutLoop10KJobs(t *testing.T) {
+
+	assert := assert.New(t)
+	deltaAvg, deltaMax := runToutLoopWithNJobs(10000, assert)
 	t.Logf("avg delta: %s", deltaAvg)
 	t.Logf("max delta: %s", deltaMax)
-
 	assert.Equal(true, deltaAvg < time.Millisecond*1)
 	assert.Equal(true, deltaMax < time.Millisecond*10)
-	assert.Equal(numberOfJobs, count)
 }
+
+func benchmarkToutLoopNJobs(n int64, b *testing.B) {
+
+	assert := assert.New(b)
+	deltaAvg, deltaMax := runToutLoopWithNJobs(n, assert)
+	b.Logf("avg delta: %s", deltaAvg)
+	b.Logf("max delta: %s", deltaMax)
+}
+
+func BenchmarkToutLoop10Jobs(b *testing.B)   { benchmarkToutLoopNJobs(10, b) }
+func BenchmarkToutLoop100Jobs(b *testing.B)  { benchmarkToutLoopNJobs(100, b) }
+func BenchmarkToutLoop1KJobs(b *testing.B)   { benchmarkToutLoopNJobs(1000, b) }
+func BenchmarkToutLoop10KJobs(b *testing.B)  { benchmarkToutLoopNJobs(10000, b) }
+func BenchmarkToutLoop100KJobs(b *testing.B) { benchmarkToutLoopNJobs(100000, b) }
+func BenchmarkToutLoop1MJobs(b *testing.B)   { benchmarkToutLoopNJobs(1000000, b) }
 
 func TestExample(t *testing.T) {
 	tloop := New()

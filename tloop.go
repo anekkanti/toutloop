@@ -68,6 +68,9 @@ type ToutLoop struct {
 }
 
 func (e *ToutLoop) handleRequest(req *request, dispatchID *string) {
+	if req == nil {
+		return
+	}
 	var err error
 	switch req.operation {
 	case addOp:
@@ -122,16 +125,16 @@ func (e *ToutLoop) Run() {
 		defer e.wg.Done()
 		var dispatchID string
 		var toutTimer = time.NewTimer(time.Second)
-	mainloop:
-		for {
+		var ok = true
+		for ok {
 			var req *request
-			ok := true
 			if dispatchID != "" {
 				select {
 				case req, ok = <-e.requests:
-					goto handleRequest
+					e.handleRequest(req, &dispatchID)
 				case e.C <- e.store[dispatchID].object:
 					dispatchID = ""
+					delete(e.store, dispatchID)
 				}
 			} else if len(e.heap) > 0 {
 				now := time.Now()
@@ -139,7 +142,8 @@ func (e *ToutLoop) Run() {
 					toutTimer.Reset(e.heap[0].runTime.Sub(now))
 					select {
 					case req, ok = <-e.requests:
-						goto handleRequest
+						e.handleRequest(req, &dispatchID)
+						continue
 					case <-toutTimer.C:
 					}
 				}
@@ -148,14 +152,8 @@ func (e *ToutLoop) Run() {
 			} else {
 				select {
 				case req, ok = <-e.requests:
-					goto handleRequest
+					e.handleRequest(req, &dispatchID)
 				}
-			}
-		handleRequest:
-			if !ok {
-				break mainloop
-			} else if req != nil {
-				e.handleRequest(req, &dispatchID)
 			}
 		}
 		close(e.C)

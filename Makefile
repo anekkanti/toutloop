@@ -8,7 +8,7 @@ build: dependencies
 	go build ./...
 
 test: build
-	go test ./...
+	go test -v ./...
 
 prof: build
-	go test -bench=. -benchmem -cpuprofile profile.out
+	go test -v -bench=. -benchmem -cpuprofile profile.out
