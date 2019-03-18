@@ -131,10 +131,10 @@ func runToutLoopWithNJobs(numberOfJobsPerSec int64, assert *assert.Assertions) (
 	return deltaAvg, deltaMax
 }
 
-func TestToutLoop10KJobs(t *testing.T) {
+func TestToutLoop1KJobs(t *testing.T) {
 
 	assert := assert.New(t)
-	deltaAvg, deltaMax := runToutLoopWithNJobs(10000, assert)
+	deltaAvg, deltaMax := runToutLoopWithNJobs(1000, assert)
 	t.Logf("avg delta: %s", deltaAvg)
 	t.Logf("max delta: %s", deltaMax)
 	assert.Equal(true, deltaAvg < time.Millisecond*1)
