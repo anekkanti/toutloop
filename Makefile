@@ -7,7 +7,7 @@ dependencies:
 build: dependencies
 	go build ./...
 
-test: build
+tests: build
 	go test -v ./...
 
 prof: build
