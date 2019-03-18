@@ -57,7 +57,7 @@ func (t *toutHeap) Pop() interface{} {
 
 // ToutLoop or the timeout loop.
 // The loop uses a heap to track and dispatches events when their timeout's expire
-// Listen to C to recieve events
+// Listen to C to receive events
 type ToutLoop struct {
 	heap     toutHeap
 	requests chan *request

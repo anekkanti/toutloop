@@ -89,7 +89,7 @@ func TestToutLoop(t *testing.T) {
 
 	select {
 	case <-tloop.C:
-		assert.FailNow("should not have recieved any jobs")
+		assert.FailNow("should not have received any jobs")
 	case <-time.Tick(500 * time.Millisecond):
 		break
 	}
