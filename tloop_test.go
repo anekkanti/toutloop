@@ -137,8 +137,8 @@ func TestToutLoop1KJobs(t *testing.T) {
 	deltaAvg, deltaMax := runToutLoopWithNJobs(1000, assert)
 	t.Logf("avg delta: %s", deltaAvg)
 	t.Logf("max delta: %s", deltaMax)
-	assert.Equal(true, deltaAvg < time.Millisecond*1)
-	assert.Equal(true, deltaMax < time.Millisecond*10)
+	assert.Equal(true, deltaAvg < time.Millisecond*2)
+	assert.Equal(true, deltaMax < time.Millisecond*20)
 }
 
 func benchmarkToutLoopNJobs(n int64, b *testing.B) {
