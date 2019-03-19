@@ -1,4 +1,8 @@
-version: 2
+version: 2.1
+
+orbs:
+  codecov: codecov/codecov@1.0.2
+
 jobs: 
   build: 
     docker: 
@@ -6,7 +10,16 @@ jobs:
     working_directory: /go/src/github.com/anekkanti/toutloop
     steps: 
       - checkout 
-      - run: make tests
+      - run: 
+        command: | 
+          make tests
+          go tool cover -html=cover.out -o coverage.html 
+          mkdir -p /tmp/artifacts
+          mv coverage.html /tmp/artifacts
+      - store_artifacts:
+          path: /tmp/artifacts
+      - codecov/upload:
+          file: cover.out
 
 workflows:
   version: 2
