@@ -10,12 +10,10 @@ jobs:
     working_directory: /go/src/github.com/anekkanti/toutloop
     steps: 
       - checkout 
-      - run: 
-        command: | 
-          make tests
-          go tool cover -html=cover.out -o coverage.html 
-          mkdir -p /tmp/artifacts
-          mv coverage.html /tmp/artifacts
+      - run: make tests
+      - run: go tool cover -html=cover.out -o coverage.html 
+      - run: mkdir -p /tmp/artifacts
+      - run: mv coverage.html /tmp/artifacts
       - store_artifacts:
           path: /tmp/artifacts
       - codecov/upload:
