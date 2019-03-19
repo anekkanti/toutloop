@@ -6,6 +6,7 @@
 
 Useful when scheduling at scale. Uses a heap to track timeouts.
 
+
 Example
 ```go
 
