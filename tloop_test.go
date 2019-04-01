@@ -3,6 +3,7 @@ package toutloop
 import (
 	"fmt"
 	"math/rand"
+	"os"
 	"testing"
 	"time"
 
@@ -18,7 +19,36 @@ type tjob struct {
 	when time.Time
 }
 
+func TestExample(t *testing.T) {
+	if !testing.Short() {
+		t.Skip("skipping perf tests in perf mode")
+	}
+	tloop := New()
+	tloop.Run()
+
+	j1 := &tjob{name: "j1"}
+	err := tloop.Add(j1.name, j1, time.Millisecond*300)
+	if err != nil {
+		panic(err)
+	}
+
+	err = tloop.Reschedule(j1.name, time.Millisecond*400)
+	if err != nil {
+		panic(err)
+	}
+
+	for j := range tloop.C {
+		if j.(*tjob) == j1 {
+			break
+		}
+	}
+	tloop.Stop()
+}
+
 func TestToutLoop(t *testing.T) {
+	if !testing.Short() {
+		t.Skip("skipping perf tests in perf mode")
+	}
 	assert := assert.New(t)
 	tloop := New()
 	tloop.Run()
@@ -132,47 +162,37 @@ func runToutLoopWithNJobs(numberOfJobsPerSec int64, assert *assert.Assertions) (
 }
 
 func TestToutLoop1KJobs(t *testing.T) {
-
+	if !testing.Short() {
+		t.Skip("skipping perf tests in perf mode")
+	}
 	assert := assert.New(t)
 	deltaAvg, deltaMax := runToutLoopWithNJobs(1000, assert)
 	t.Logf("avg delta: %s", deltaAvg)
 	t.Logf("max delta: %s", deltaMax)
 }
 
-func benchmarkToutLoopNJobs(n int64, b *testing.B) {
+func TestToutLoopPerf(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping perf tests in short mode")
+	}
+	assert := assert.New(t)
 
-	assert := assert.New(b)
-	deltaAvg, deltaMax := runToutLoopWithNJobs(n, assert)
-	b.Logf("avg delta: %s", deltaAvg)
-	b.Logf("max delta: %s", deltaMax)
-}
-
-func BenchmarkToutLoop10Jobs(b *testing.B)   { benchmarkToutLoopNJobs(10, b) }
-func BenchmarkToutLoop100Jobs(b *testing.B)  { benchmarkToutLoopNJobs(100, b) }
-func BenchmarkToutLoop1KJobs(b *testing.B)   { benchmarkToutLoopNJobs(1000, b) }
-func BenchmarkToutLoop10KJobs(b *testing.B)  { benchmarkToutLoopNJobs(10000, b) }
-func BenchmarkToutLoop100KJobs(b *testing.B) { benchmarkToutLoopNJobs(100000, b) }
-func BenchmarkToutLoop1MJobs(b *testing.B)   { benchmarkToutLoopNJobs(1000000, b) }
-
-func TestExample(t *testing.T) {
-	tloop := New()
-	tloop.Run()
-
-	j1 := &tjob{name: "j1"}
-	err := tloop.Add(j1.name, j1, time.Millisecond*300)
+	f, err := os.Create("prof.csv")
 	if err != nil {
-		panic(err)
+		t.Logf("failed to prof.csv, err=%s", err)
 	}
 
-	err = tloop.Reschedule(j1.name, time.Millisecond*400)
-	if err != nil {
-		panic(err)
+	if f != nil {
+		f.WriteString("rate(events per second),avg delay(ms),max delay(ms)\n")
 	}
 
-	for j := range tloop.C {
-		if j.(*tjob) == j1 {
-			break
-		}
+	count := int64(1)
+	for i := 0; i < 22; i++ {
+		deltaAvg, deltaMax := runToutLoopWithNJobs(count, assert)
+		t.Logf("count: %d", count)
+		t.Logf("avg delta: %s", deltaAvg)
+		t.Logf("max delta: %s", deltaMax)
+		f.WriteString(fmt.Sprintf("%d,%f,%f\n", count, deltaAvg.Seconds()*1000, deltaMax.Seconds()*1000))
+		count = count * 2
 	}
-	tloop.Stop()
 }

@@ -1,4 +1,4 @@
-all: build test prof
+all: build tests prof
 
 dependencies:
 	go get -u github.com/golang/dep/cmd/dep
@@ -8,7 +8,7 @@ build: dependencies
 	go build ./...
 
 tests: build
-	go test -v -coverprofile=cover.out ./...
+	go test -v -short .
 
 prof: build
-	go test -v -bench=. -benchmem -cpuprofile profile.out
+	go test -v .
