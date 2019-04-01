@@ -3,9 +3,9 @@
 [![CircleCI](https://circleci.com/gh/anekkanti/toutloop.svg?style=svg)](https://circleci.com/gh/anekkanti/toutloop)
 [![GoDoc](https://godoc.org/github.com/anekkanti/toutloop?status.svg)](https://godoc.org/github.com/anekkanti/toutloop)
 [![Go Report Card](https://goreportcard.com/badge/github.com/anekkanti/toutloop)](https://goreportcard.com/report/github.com/anekkanti/toutloop)
+[![codecov](https://codecov.io/gh/anekkanti/toutloop/branch/master/graph/badge.svg)](https://codecov.io/gh/anekkanti/toutloop)
 
 Useful when scheduling at scale. Uses a heap to track timeouts.
-
 
 Example
 ```go
