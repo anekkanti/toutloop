@@ -1,0 +1,9 @@
+set datafile separator ","
+set term png
+set output 'performance.png'
+set logscale
+set title 'toutloop performance'
+set xlabel 'rate - number of timeouts per second'
+set ylabel 'delay observed - ms'
+plot 'prof.csv' u 1:2 w lp t 'average', 'prof.csv' u 1:3 w lp t 'max'
+

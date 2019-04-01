@@ -12,3 +12,4 @@ tests: build
 
 prof: build
 	go test -v .
+	gnuplot -c gnuplot-script
