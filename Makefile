@@ -8,7 +8,7 @@ build: dependencies
 	go build ./...
 
 tests: build
-	go test -v -short .
+	go test -v -coverprofile=cover.out -short .
 
 prof: build
 	go test -v .
