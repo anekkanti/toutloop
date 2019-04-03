@@ -23,7 +23,7 @@ type tjob struct {
 }
 
 func main() {
-	tloop := New()
+	tloop := New(0 /*recieveChanBufferSize*/ )
 	tloop.Run()
 
 	j1 := &tjob{name: "j1"}
@@ -50,4 +50,4 @@ func main() {
 
 ![chart](performance.png)
 
-As observed in the chart, the loop performs with lower then millisecond delay for events when its scheduling upto 10K events per second. After which the performance degrades and the toutloop can't keep up with expiring timeouts. 
+As observed in the chart, the loop performs with lower then millisecond delay for events when its scheduling upto 10K events per second. After which the performance degrades and the toutloop can't seem to keep up with expiring timeouts. 

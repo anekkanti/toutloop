@@ -23,7 +23,7 @@ func TestExample(t *testing.T) {
 	if !testing.Short() {
 		t.Skip("skipping perf tests in perf mode")
 	}
-	tloop := New()
+	tloop := New(0 /*recieveChanBufferSize*/)
 	tloop.Run()
 
 	j1 := &tjob{name: "j1"}
@@ -50,7 +50,7 @@ func TestToutLoop(t *testing.T) {
 		t.Skip("skipping perf tests in perf mode")
 	}
 	assert := assert.New(t)
-	tloop := New()
+	tloop := New(0)
 	tloop.Run()
 
 	j1 := &tjob{name: "job-1", when: time.Now().Add(time.Millisecond * 300)}
@@ -127,12 +127,14 @@ func TestToutLoop(t *testing.T) {
 }
 
 func runToutLoopWithNJobs(numberOfJobsPerSec int64, assert *assert.Assertions) (avg, max time.Duration) {
-	tloop := New()
+	tloop := New(10)
 	tloop.Run()
 
+	mult := int64(1)
+
 	go func() {
-		for i := int64(0); i < numberOfJobsPerSec; i++ {
-			after := time.Duration(rand.Int()%1000) * time.Millisecond
+		for i := int64(0); i < numberOfJobsPerSec*mult; i++ {
+			after := time.Duration(rand.Int()%(int(mult)*1000)) * time.Millisecond
 			j := &tjob{name: fmt.Sprintf("job-%d", i), when: time.Now().Add(after)}
 			err := tloop.Add(j.name, j, after)
 			assert.NoError(err)
@@ -150,12 +152,12 @@ func runToutLoopWithNJobs(numberOfJobsPerSec int64, assert *assert.Assertions) (
 			deltaMax = delta
 		}
 		count++
-		if count == numberOfJobsPerSec {
+		if count == numberOfJobsPerSec*mult {
 			tloop.Stop()
 		}
 	}
 
-	assert.Equal(numberOfJobsPerSec, count)
+	assert.Equal(numberOfJobsPerSec*mult, count)
 
 	deltaAvg := deltaSum / time.Duration(count)
 	return deltaAvg, deltaMax
@@ -187,7 +189,7 @@ func TestToutLoopPerf(t *testing.T) {
 	}
 
 	count := int64(1)
-	for i := 0; i < 22; i++ {
+	for i := 0; i < 23; i++ {
 		deltaAvg, deltaMax := runToutLoopWithNJobs(count, assert)
 		t.Logf("count: %d", count)
 		t.Logf("avg delta: %s", deltaAvg)

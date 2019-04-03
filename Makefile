@@ -11,5 +11,5 @@ tests: build
 	go test -v -coverprofile=cover.out -short .
 
 prof: build
-	go test -v .
+	go test -v -timeout 99999s .
 	gnuplot -c gnuplot-script

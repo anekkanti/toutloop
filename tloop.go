@@ -162,11 +162,11 @@ func (e *ToutLoop) Run() {
 }
 
 // New returns a new timeout looop
-func New() *ToutLoop {
+func New(recieveChanBuffer int) *ToutLoop {
 	e := &ToutLoop{
 		requests: make(chan *request),
 		reply:    make(chan error),
-		C:        make(chan interface{}),
+		C:        make(chan interface{}, recieveChanBuffer),
 		wg:       sync.WaitGroup{},
 		store:    make(map[string]*timeout),
 	}
