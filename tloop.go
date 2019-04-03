@@ -3,6 +3,7 @@ package toutloop
 import (
 	"container/heap"
 	"fmt"
+	"hash/fnv"
 	"sync"
 	"time"
 )
@@ -21,6 +22,13 @@ type request struct {
 	object    interface{}
 	runTime   time.Time
 	reply     bool
+}
+
+var h = fnv.New32a()
+
+func hash(s string) uint32 {
+	h.Write([]byte(s))
+	return h.Sum32()
 }
 
 type timeout struct {
@@ -61,6 +69,7 @@ func (t *toutHeap) Pop() interface{} {
 type ToutLoop struct {
 	heap     toutHeap
 	requests chan *request
+	mux      sync.Mutex
 	reply    chan error
 	C        chan interface{}
 	wg       sync.WaitGroup
@@ -180,35 +189,39 @@ func (e *ToutLoop) Stop() {
 	e.wg.Wait()
 }
 
+func (e *ToutLoop) sendRequest(req *request) error {
+	e.mux.Lock()
+	defer e.mux.Unlock()
+	e.requests <- req
+	return <-e.reply
+}
+
 // Add object with given id to be returned after given time
 func (e *ToutLoop) Add(id string, object interface{}, after time.Duration) error {
-	e.requests <- &request{
+	return e.sendRequest(&request{
 		operation: addOp,
 		id:        id,
 		object:    object,
 		runTime:   time.Now().Add(after),
 		reply:     true,
-	}
-	return <-e.reply
+	})
 }
 
 // Reschedule the object with the given id
 func (e *ToutLoop) Reschedule(id string, after time.Duration) error {
-	e.requests <- &request{
+	return e.sendRequest(&request{
 		operation: rescheduleOp,
 		id:        id,
 		runTime:   time.Now().Add(after),
 		reply:     true,
-	}
-	return <-e.reply
+	})
 }
 
 // Remove the object with the given id from the loop
 func (e *ToutLoop) Remove(id string) error {
-	e.requests <- &request{
+	return e.sendRequest(&request{
 		operation: removeOp,
 		id:        id,
 		reply:     true,
-	}
-	return <-e.reply
+	})
 }
