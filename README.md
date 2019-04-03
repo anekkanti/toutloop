@@ -1,13 +1,21 @@
-# Timeout Loop
+A tight running loop that tracks timeouts at scale.
 
 [![CircleCI](https://circleci.com/gh/anekkanti/toutloop.svg?style=svg)](https://circleci.com/gh/anekkanti/toutloop)
 [![GoDoc](https://godoc.org/github.com/anekkanti/toutloop?status.svg)](https://godoc.org/github.com/anekkanti/toutloop)
 [![Go Report Card](https://goreportcard.com/badge/github.com/anekkanti/toutloop)](https://goreportcard.com/report/github.com/anekkanti/toutloop)
 [![codecov](https://codecov.io/gh/anekkanti/toutloop/branch/master/graph/badge.svg)](https://codecov.io/gh/anekkanti/toutloop)
 
-Useful when scheduling at scale. Uses a heap to track timeouts.
 
-Example
+The loop uses the [`container/heap`](https://golang.org/pkg/container/heap/) package to track timeouts and deliver them as they expire. User can add, reschedule or remove timeouts. The expired timeouts can be received on the `ToutLoop.C` channel.
+
+## Usage
+Import the package using: 
+
+```go
+import "github.com/anekkanti/toutloop"
+```
+
+Here an example that creates a timeout and receives it.
 ```go
 
 type tjob struct {
@@ -15,8 +23,7 @@ type tjob struct {
 }
 
 func main() {
-
-        tloop := New()
+	tloop := New()
 	tloop.Run()
 
 	j1 := &tjob{name: "j1"}
