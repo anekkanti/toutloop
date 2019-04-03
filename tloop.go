@@ -11,6 +11,7 @@ type operation int
 
 const (
 	addOp        operation = iota
+	existsOp     operation = iota
 	rescheduleOp operation = iota
 	removeOp     operation = iota
 )
@@ -86,6 +87,10 @@ func (e *ToutLoop) handleRequest(req *request, dispatchID *string) {
 		} else {
 			err = fmt.Errorf("object with id=%s already exists", req.id)
 		}
+	case existsOp:
+		if _, ok := e.store[req.id]; !ok {
+			err = fmt.Errorf("object with id=%s does not exists", req.id)
+		}
 	case rescheduleOp:
 		// ignore request if the object does not exists in store
 		if tout, ok := e.store[req.id]; ok {
@@ -131,8 +136,8 @@ func (e *ToutLoop) Run() {
 				case req, ok = <-e.requests:
 					e.handleRequest(req, &dispatchID)
 				case e.C <- e.store[dispatchID].object:
-					dispatchID = ""
 					delete(e.store, dispatchID)
+					dispatchID = ""
 				}
 			} else if len(e.heap) > 0 {
 				now := time.Now()
@@ -194,6 +199,17 @@ func (e *ToutLoop) Add(id string, object interface{}, after time.Duration) error
 		object:    object,
 		runTime:   time.Now().Add(after),
 	})
+}
+
+// Exists tests if the object with id exists in the loop
+func (e *ToutLoop) Exists(id string) bool {
+	if err := e.sendRequest(&request{
+		operation: existsOp,
+		id:        id,
+	}); err == nil {
+		return true
+	}
+	return false
 }
 
 // Reschedule the object with the given id

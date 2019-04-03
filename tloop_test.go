@@ -56,22 +56,27 @@ func TestToutLoop(t *testing.T) {
 	j1 := &tjob{name: "job-1", when: time.Now().Add(time.Millisecond * 300)}
 	err := tloop.Add(j1.name, j1, time.Millisecond*300)
 	assert.NoError(err)
+	assert.True(tloop.Exists(j1.name))
+	assert.False(tloop.Exists("non-existing"))
 
 	j2 := &tjob{name: "job-2", when: time.Now().Add(time.Millisecond * 200)}
 	err = tloop.Add(j2.name, j2, time.Millisecond*200)
 	assert.NoError(err)
+	assert.True(tloop.Exists(j2.name))
 	err = tloop.Add(j2.name, j2, time.Millisecond*200)
 	assert.Error(err)
 
 	j3 := &tjob{name: "job-3", when: time.Now().Add(time.Millisecond * 100)}
 	err = tloop.Add(j3.name, j3, time.Millisecond*100)
 	assert.NoError(err)
+	assert.True(tloop.Exists(j3.name))
 
 	j4 := &tjob{name: "job-4", when: time.Now().Add(time.Millisecond * 400)}
 	err = tloop.Add(j4.name, j4, time.Millisecond*100)
 	assert.NoError(err)
 	err = tloop.Reschedule(j4.name, time.Millisecond*400)
 	assert.NoError(err)
+	assert.True(tloop.Exists(j4.name))
 	err = tloop.Reschedule("non-existing", time.Millisecond*400)
 	assert.Error(err)
 
@@ -81,12 +86,15 @@ func TestToutLoop(t *testing.T) {
 	time.Sleep(time.Millisecond * 20)
 	err = tloop.Reschedule(j5.name, time.Millisecond*500)
 	assert.NoError(err)
+	assert.True(tloop.Exists(j5.name))
 
 	j6 := &tjob{name: "job-6", when: time.Now().Add(time.Millisecond * 100)}
 	err = tloop.Add(j6.name, j6, time.Millisecond*100)
+	assert.True(tloop.Exists(j6.name))
 	assert.NoError(err)
 	err = tloop.Remove(j6.name)
 	assert.NoError(err)
+	assert.False(tloop.Exists(j6.name))
 	err = tloop.Remove("non-existing")
 	assert.Error(err)
 
@@ -96,26 +104,34 @@ func TestToutLoop(t *testing.T) {
 	time.Sleep(time.Millisecond * 20)
 	err = tloop.Remove(j7.name)
 	assert.NoError(err)
+	assert.False(tloop.Exists(j7.name))
 
 	j := (<-tloop.C).(*tjob)
 	assert.Equal(j3, j)
 	assert.WithinDuration(time.Now(), j.when, time.Millisecond*5)
+	assert.False(tloop.Exists(j3.name))
+	assert.True(tloop.Exists(j1.name))
 
 	j = (<-tloop.C).(*tjob)
 	assert.Equal(j2, j)
 	assert.WithinDuration(time.Now(), j.when, time.Millisecond*5)
+	assert.False(tloop.Exists(j2.name))
+	assert.True(tloop.Exists(j1.name))
 
 	j = (<-tloop.C).(*tjob)
 	assert.Equal(j1, j)
 	assert.WithinDuration(time.Now(), j.when, time.Millisecond*5)
+	assert.False(tloop.Exists(j1.name))
 
 	j = (<-tloop.C).(*tjob)
 	assert.Equal(j4, j)
 	assert.WithinDuration(time.Now(), j.when, time.Millisecond*5)
+	assert.False(tloop.Exists(j4.name))
 
 	j = (<-tloop.C).(*tjob)
 	assert.Equal(j5, j)
 	assert.WithinDuration(time.Now(), j.when, time.Millisecond*5)
+	assert.False(tloop.Exists(j5.name))
 
 	select {
 	case <-tloop.C:
