@@ -3,7 +3,6 @@ package toutloop
 import (
 	"container/heap"
 	"fmt"
-	"hash/fnv"
 	"sync"
 	"time"
 )
@@ -21,14 +20,6 @@ type request struct {
 	id        string
 	object    interface{}
 	runTime   time.Time
-	reply     bool
-}
-
-var h = fnv.New32a()
-
-func hash(s string) uint32 {
-	h.Write([]byte(s))
-	return h.Sum32()
 }
 
 type timeout struct {
@@ -122,9 +113,7 @@ func (e *ToutLoop) handleRequest(req *request, dispatchID *string) {
 	if *dispatchID == req.id {
 		*dispatchID = ""
 	}
-	if req.reply {
-		e.reply <- err
-	}
+	e.reply <- err
 }
 
 // Run the timeout loop
@@ -192,6 +181,7 @@ func (e *ToutLoop) Stop() {
 func (e *ToutLoop) sendRequest(req *request) error {
 	e.mux.Lock()
 	defer e.mux.Unlock()
+	// sending req and recieving reply should be atomic
 	e.requests <- req
 	return <-e.reply
 }
@@ -203,7 +193,6 @@ func (e *ToutLoop) Add(id string, object interface{}, after time.Duration) error
 		id:        id,
 		object:    object,
 		runTime:   time.Now().Add(after),
-		reply:     true,
 	})
 }
 
@@ -213,7 +202,6 @@ func (e *ToutLoop) Reschedule(id string, after time.Duration) error {
 		operation: rescheduleOp,
 		id:        id,
 		runTime:   time.Now().Add(after),
-		reply:     true,
 	})
 }
 
@@ -222,6 +210,5 @@ func (e *ToutLoop) Remove(id string) error {
 	return e.sendRequest(&request{
 		operation: removeOp,
 		id:        id,
-		reply:     true,
 	})
 }
