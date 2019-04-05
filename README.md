@@ -50,4 +50,4 @@ func main() {
 
 ![chart](performance.png)
 
-As observed in the chart, the loop performs with lower then millisecond delay for events when its scheduling upto 10K events per second. After which the performance degrades and the toutloop can't seem to keep up with expiring timeouts. 
+The loop performs with lower then millisecond delay for events when its scheduling upto 10K events per second. After which the performance degrades and the toutloop can't seem to keep up with expiring timeouts. 
