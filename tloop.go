@@ -11,7 +11,7 @@ type operation int
 
 const (
 	addOp        operation = iota
-	existsOp     operation = iota
+	getOp        operation = iota
 	rescheduleOp operation = iota
 	removeOp     operation = iota
 )
@@ -62,7 +62,7 @@ type ToutLoop struct {
 	heap     toutHeap
 	requests chan *request
 	mux      sync.Mutex
-	reply    chan error
+	reply    chan interface{}
 	C        chan interface{}
 	wg       sync.WaitGroup
 	store    map[string]*timeout
@@ -72,11 +72,13 @@ func (e *ToutLoop) handleRequest(req *request, dispatchID *string) {
 	if req == nil {
 		return
 	}
-	var err error
+	var reply interface{}
+	var ok bool
+	var tout *timeout
 	switch req.operation {
 	case addOp:
 		// ignore request if the object already exists in store
-		if _, ok := e.store[req.id]; !ok {
+		if _, ok = e.store[req.id]; !ok {
 			tout := &timeout{
 				id:      req.id,
 				object:  req.object,
@@ -85,15 +87,15 @@ func (e *ToutLoop) handleRequest(req *request, dispatchID *string) {
 			e.store[req.id] = tout
 			heap.Push(&e.heap, tout)
 		} else {
-			err = fmt.Errorf("object with id=%s already exists", req.id)
+			reply = fmt.Errorf("object with id=%s already exists", req.id)
 		}
-	case existsOp:
-		if _, ok := e.store[req.id]; !ok {
-			err = fmt.Errorf("object with id=%s does not exists", req.id)
+	case getOp:
+		if reply, ok = e.store[req.id]; !ok {
+			reply = fmt.Errorf("object with id=%s does not exists", req.id)
 		}
 	case rescheduleOp:
 		// ignore request if the object does not exists in store
-		if tout, ok := e.store[req.id]; ok {
+		if tout, ok = e.store[req.id]; ok {
 			tout.runTime = req.runTime
 			if tout.index != -1 {
 				heap.Fix(&e.heap, tout.index)
@@ -101,24 +103,24 @@ func (e *ToutLoop) handleRequest(req *request, dispatchID *string) {
 				heap.Push(&e.heap, tout)
 			}
 		} else {
-			err = fmt.Errorf("object with id=%s does not exists", req.id)
+			reply = fmt.Errorf("object with id=%s does not exists", req.id)
 		}
 	case removeOp:
 		// ignore request if the object does not exist in store
-		if tout, ok := e.store[req.id]; ok {
+		if tout, ok = e.store[req.id]; ok {
 			if tout.index != -1 {
 				heap.Remove(&e.heap, tout.index)
 			}
 			delete(e.store, req.id)
 		} else {
-			err = fmt.Errorf("object with id=%s does not exists", req.id)
+			reply = fmt.Errorf("object with id=%s does not exists", req.id)
 		}
 	}
 
 	if *dispatchID == req.id {
 		*dispatchID = ""
 	}
-	e.reply <- err
+	e.reply <- reply
 }
 
 // Run the timeout loop
@@ -168,7 +170,7 @@ func (e *ToutLoop) Run() {
 func New(recieveChanBuffer int) *ToutLoop {
 	e := &ToutLoop{
 		requests: make(chan *request),
-		reply:    make(chan error),
+		reply:    make(chan interface{}),
 		C:        make(chan interface{}, recieveChanBuffer),
 		wg:       sync.WaitGroup{},
 		store:    make(map[string]*timeout),
@@ -183,7 +185,7 @@ func (e *ToutLoop) Stop() {
 	e.wg.Wait()
 }
 
-func (e *ToutLoop) sendRequest(req *request) error {
+func (e *ToutLoop) sendRequest(req *request) interface{} {
 	e.mux.Lock()
 	defer e.mux.Unlock()
 	// sending req and recieving reply should be atomic
@@ -193,38 +195,52 @@ func (e *ToutLoop) sendRequest(req *request) error {
 
 // Add object with given id to be returned after given time
 func (e *ToutLoop) Add(id string, object interface{}, after time.Duration) error {
-	return e.sendRequest(&request{
+	switch reply := e.sendRequest(&request{
 		operation: addOp,
 		id:        id,
 		object:    object,
 		runTime:   time.Now().Add(after),
-	})
+	}).(type) {
+	case error:
+		return reply
+	}
+	return nil
 }
 
 // Exists tests if the object with id exists in the loop
-func (e *ToutLoop) Exists(id string) bool {
-	if err := e.sendRequest(&request{
-		operation: existsOp,
+func (e *ToutLoop) Get(id string) (interface{}, error) {
+	switch reply := e.sendRequest(&request{
+		operation: getOp,
 		id:        id,
-	}); err == nil {
-		return true
+	}).(type) {
+	case error:
+		return nil, reply
+	default:
+		return reply.(*timeout).object, nil
 	}
-	return false
 }
 
 // Reschedule the object with the given id
 func (e *ToutLoop) Reschedule(id string, after time.Duration) error {
-	return e.sendRequest(&request{
+	switch reply := e.sendRequest(&request{
 		operation: rescheduleOp,
 		id:        id,
 		runTime:   time.Now().Add(after),
-	})
+	}).(type) {
+	case error:
+		return reply
+	}
+	return nil
 }
 
 // Remove the object with the given id from the loop
 func (e *ToutLoop) Remove(id string) error {
-	return e.sendRequest(&request{
+	switch reply := e.sendRequest(&request{
 		operation: removeOp,
 		id:        id,
-	})
+	}).(type) {
+	case error:
+		return reply
+	}
+	return nil
 }
