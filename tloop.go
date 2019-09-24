@@ -207,7 +207,7 @@ func (e *ToutLoop) Add(id string, object interface{}, after time.Duration) error
 	return nil
 }
 
-// Exists tests if the object with id exists in the loop
+// Get the object with id if it exists in the loop
 func (e *ToutLoop) Get(id string) (interface{}, error) {
 	switch reply := e.sendRequest(&request{
 		operation: getOp,
